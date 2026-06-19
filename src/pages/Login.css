@@ -1,0 +1,20 @@
+.svg-path {
+  stroke-dashoffset: -1386;
+  stroke-dasharray: 240 1386;
+  transition: stroke-dashoffset 0.7s ease-out, stroke-dasharray 0.7s ease-out;
+}
+
+.svg-path.animate-email {
+  stroke-dashoffset: 0;
+  stroke-dasharray: 240 1386;
+}
+
+.svg-path.animate-password {
+  stroke-dashoffset: -336;
+  stroke-dasharray: 240 1386;
+}
+
+.svg-path.animate-submit {
+  stroke-dashoffset: -730;
+  stroke-dasharray: 530 1386;
+}
