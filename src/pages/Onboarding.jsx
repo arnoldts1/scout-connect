@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Plus, ArrowRight, Loader2, CheckCircle2, Camera, Phone, Calendar, Award } from 'lucide-react';
+import { Users, ArrowRight, Loader2, CheckCircle2, Camera, Phone, Calendar, Award } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -83,7 +83,7 @@ export default function Onboarding() {
           setDateOfBirth(currentUser.date_of_birth);
           setScoutRank(calculateScoutRank(currentUser.date_of_birth));
         }
-      } catch (error) {
+      } catch {
         // User might not be authenticated yet (just signed up)
         // Try to get from supabase auth directly
         const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -238,11 +238,16 @@ export default function Onboarding() {
       }
       
       // Create or update PublicProfile so user is visible to everyone
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: profileLookupError } = await supabase
         .from('public_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
+
+      // A missing row is expected for a new user; other lookup errors are not.
+      if (profileLookupError && profileLookupError.code !== 'PGRST116') {
+        throw profileLookupError;
+      }
 
       const publicProfileData = {
         user_id: user.id,
@@ -261,14 +266,16 @@ export default function Onboarding() {
       };
 
       if (existingProfile?.id) {
-        await supabase
+        const { error: profileUpdateError } = await supabase
           .from('public_profiles')
           .update(publicProfileData)
           .eq('id', existingProfile.id);
+        if (profileUpdateError) throw profileUpdateError;
       } else {
-        await supabase
+        const { error: profileInsertError } = await supabase
           .from('public_profiles')
           .insert(publicProfileData);
+        if (profileInsertError) throw profileInsertError;
       }
 
       toast.success('Onboarding completed!');
@@ -402,7 +409,7 @@ export default function Onboarding() {
         .eq('id', user.id);
 
       if (dbError) {
-        console.warn('Database update error (non-critical):', dbError);
+        throw dbError;
       }
 
       // Refresh the session to get the updated metadata
@@ -416,6 +423,10 @@ export default function Onboarding() {
         .from('public_profiles')
         .select('id')
         .eq('user_id', user.id);
+
+      if (existingProfiles.error) {
+        throw existingProfiles.error;
+      }
 
       const publicProfileData = {
         user_id: user.id,
@@ -437,14 +448,16 @@ export default function Onboarding() {
       };
 
       if (existingProfiles.data && existingProfiles.data.length > 0) {
-        await supabase
+        const { error: profileUpdateError } = await supabase
           .from('public_profiles')
           .update(publicProfileData)
           .eq('user_id', user.id);
+        if (profileUpdateError) throw profileUpdateError;
       } else {
-        await supabase
+        const { error: profileInsertError } = await supabase
           .from('public_profiles')
           .insert(publicProfileData);
+        if (profileInsertError) throw profileInsertError;
       }
 
       toast.success('Onboarding completed!');

@@ -7,8 +7,8 @@
 
 ## 2. Run the Database Migration
 1. In Supabase Dashboard → **SQL Editor**
-2. Open `supabase/migrations/001_initial_schema.sql`
-3. Paste the entire contents → **Run**
+2. Run every file in `supabase/migrations/` in numeric order.
+3. Paste each file's contents into the SQL Editor and run it before moving to the next file.
 
 ## 3. Create Storage Buckets
 In Supabase Dashboard → **Storage** → **New bucket**:
